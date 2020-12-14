@@ -58,7 +58,10 @@
 #define _VOLATILE_H_
 
 #include "staticcontract.h"
+
+#if defined(_MSC_VER)
 #include <winnt.h>
+#endif
 
 //
 // This code is extremely compiler- and CPU-specific, and will need to be altered to
