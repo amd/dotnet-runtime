@@ -58,6 +58,7 @@
 #define _VOLATILE_H_
 
 #include "staticcontract.h"
+#include <winnt.h>
 
 //
 // This code is extremely compiler- and CPU-specific, and will need to be altered to
@@ -104,6 +105,14 @@
 //
 #define VOLATILE_MEMORY_BARRIER()
 #endif // __GNUC__
+
+#if defined(__GNUC__)
+#define VOLATILE_PREFETCH(A) __builtin_prefetch(A, 0, 0)
+#elif defined (_MSC_VER)
+#define VOLATILE_PREFETCH(A) PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, A)
+#else
+#define VOLATILE_PREFETCH(A) 
+#endif
 
 template<typename T>
 struct RemoveVolatile
@@ -179,10 +188,12 @@ T VolatileLoad(T const * pt)
     }
 #pragma warning(pop)
 #else
+    VOLATILE_PREFETCH(pt);
     T val = *(T volatile const *)pt;
     VOLATILE_MEMORY_BARRIER();
 #endif
 #else
+    VOLATILE_PREFETCH(pt);
     T val = *pt;
 #endif
     return val;
