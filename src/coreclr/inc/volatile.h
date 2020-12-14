@@ -110,9 +110,9 @@
 #endif // __GNUC__
 
 #if defined(__GNUC__)
-#define VOLATILE_PREFETCH(A) __builtin_prefetch(A, 0, 0)
+#define VOLATILE_PREFETCH(A) __builtin_prefetch((const void *)A, 0, 0)
 #elif defined (_MSC_VER)
-#define VOLATILE_PREFETCH(A) PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, A)
+#define VOLATILE_PREFETCH(A) PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, (const void *)A)
 #else
 #define VOLATILE_PREFETCH(A) 
 #endif
