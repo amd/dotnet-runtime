@@ -15679,6 +15679,22 @@ void gc_heap::trigger_gc_for_alloc (int gen_number, gc_reason gr,
 #endif //BACKGROUND_GC
 }
 
+//#define PREFETCH
+#ifdef PREFETCH
+__declspec(naked) void __fastcall Prefetch(void* addr)
+{
+    __asm {
+        PREFETCHT0[ECX]
+        ret
+    };
+}
+#else //PREFETCH
+inline void Prefetch(void* addr)
+{
+    UNREFERENCED_PARAMETER(addr);
+}
+#endif //PREFETCH
+
 allocation_state gc_heap::try_allocate_more_space (alloc_context* acontext, size_t size,
                                     uint32_t flags, int gen_number)
 {
@@ -15788,6 +15804,8 @@ allocation_state gc_heap::try_allocate_more_space (alloc_context* acontext, size
             }
         }
     }
+
+    Prefetch(acontext);
 
     allocation_state can_allocate = ((gen_number == 0) ?
         allocate_soh (gen_number, size, acontext, flags, align_const) :
@@ -20859,21 +20877,6 @@ void gc_heap::save_post_plug_info (uint8_t* last_pinned_plug, uint8_t* last_obje
     }
 }
 
-//#define PREFETCH
-#ifdef PREFETCH
-__declspec(naked) void __fastcall Prefetch(void* addr)
-{
-   __asm {
-       PREFETCHT0 [ECX]
-        ret
-    };
-}
-#else //PREFETCH
-inline void Prefetch (void* addr)
-{
-    UNREFERENCED_PARAMETER(addr);
-}
-#endif //PREFETCH
 #ifdef MH_SC_MARK
 inline
 VOLATILE(uint8_t*)& gc_heap::ref_mark_stack (gc_heap* hp, int index)
