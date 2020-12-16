@@ -15,7 +15,7 @@ namespace System.Threading
         private const int ThreadPoolThreadTimeoutMs = 20 * 1000; // If you change this make sure to change the timeout times in the tests.
         private const int SmallStackSizeBytes = 256 * 1024;
 
-        private const short MaxPossibleThreadCount = short.MaxValue;
+        private const short MaxPossibleThreadCount = 128; // short.MaxValue;
 
 #if TARGET_64BIT
         private const short DefaultMaxWorkerThreadCount = MaxPossibleThreadCount;
@@ -73,7 +73,7 @@ namespace System.Threading
 
         private PortableThreadPool()
         {
-            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)Environment.ProcessorCount;
+            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)(Environment.ProcessorCount / 4);
             if (_minThreads > MaxPossibleThreadCount)
             {
                 _minThreads = MaxPossibleThreadCount;
