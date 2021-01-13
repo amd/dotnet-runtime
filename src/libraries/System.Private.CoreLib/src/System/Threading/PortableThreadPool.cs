@@ -30,6 +30,7 @@ namespace System.Threading
 
         private static readonly short s_forcedMinWorkerThreads = AppContextConfigHelper.GetInt16Config("System.Threading.ThreadPool.MinThreads", 0, false);
         private static readonly short s_forcedMaxWorkerThreads = AppContextConfigHelper.GetInt16Config("System.Threading.ThreadPool.MaxThreads", 0, false);
+        private static readonly short s_minWorkerThreadsCap = AppContextConfigHelper.GetInt16Config("System.Threading.ThreadPool.MinThreadsCap", 32, false);
 
         [ThreadStatic]
         private static object? t_completionCountObject;
@@ -73,7 +74,7 @@ namespace System.Threading
 
         private PortableThreadPool()
         {
-            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)Environment.ProcessorCount;
+            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)Math.Min(Environment.ProcessorCount, s_minWorkerThreadsCap);
             if (_minThreads > MaxPossibleThreadCount)
             {
                 _minThreads = MaxPossibleThreadCount;
