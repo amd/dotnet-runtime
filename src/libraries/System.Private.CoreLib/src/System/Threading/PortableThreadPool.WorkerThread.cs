@@ -55,6 +55,7 @@ namespace System.Threading
                         while (TakeActiveRequest(threadPoolInstance))
                         {
                             Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, Environment.TickCount);
+                            Contention.ThreadPoolContention.ReportWork();
                             if (!ThreadPoolWorkQueue.Dispatch())
                             {
                                 // ShouldStopProcessingWorkNow() caused the thread to stop processing work, and it would have
@@ -120,6 +121,12 @@ namespace System.Threading
                             newCounts.SubtractNumExistingThreads(1);
                             short newNumExistingThreads = (short)(numExistingThreads - 1);
                             short newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, Math.Min(newNumExistingThreads, newCounts.NumThreadsGoal));
+
+                            if (Contention.ThreadPoolContention.ContentionDetected)
+                            {
+                                newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
+                            }
+
                             newCounts.NumThreadsGoal = newNumThreadsGoal;
 
                             ThreadCounts oldCounts = threadPoolInstance._separated.counts.InterlockedCompareExchange(newCounts, counts);
