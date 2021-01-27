@@ -125,6 +125,7 @@ namespace System.Threading
                             if (Contention.ThreadPoolContention.ContentionDetected)
                             {
                                 newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
+                                Contention.ThreadPoolContention.ReportThreadCountChange();
                             }
 
                             newCounts.NumThreadsGoal = newNumThreadsGoal;
