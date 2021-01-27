@@ -34,7 +34,11 @@ namespace System.Threading
 
             public void ReportWait() => Interlocked.Increment(ref _totalWaits);
 
-            public void ReportWork() => Interlocked.Exchange(ref _totalWaits, 0);
+            public void ReportWork() => ResetWaits();
+
+            public void ReportThreadCountChange() => ResetWaits();
+
+            private void ResetWaits() => Interlocked.Exchange(ref _totalWaits, 0);
         }
     }
 }
