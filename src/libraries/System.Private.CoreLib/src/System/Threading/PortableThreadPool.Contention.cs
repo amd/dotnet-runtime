@@ -17,7 +17,7 @@ namespace System.Threading
 
             public bool ContentionDetected
             {
-                get => _totalWaits <= _waitThreshold;
+                get => _totalWaits >= _waitThreshold;
             }
 
             public short StepDown
