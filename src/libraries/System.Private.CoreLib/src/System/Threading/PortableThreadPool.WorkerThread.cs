@@ -55,7 +55,6 @@ namespace System.Threading
                         while (TakeActiveRequest(threadPoolInstance))
                         {
                             Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, Environment.TickCount);
-                            // Contention.ThreadPoolContention.ReportWork();
                             if (!ThreadPoolWorkQueue.Dispatch())
                             {
                                 // ShouldStopProcessingWorkNow() caused the thread to stop processing work, and it would have
