@@ -52,7 +52,6 @@ namespace System.Threading
                     while (semaphore.Wait(ThreadPoolThreadTimeoutMs, spinWait))
                     {
                         bool alreadyRemovedWorkingWorker = false;
-                        Contention.ThreadPoolContention.ReportWork();
                         while (TakeActiveRequest(threadPoolInstance))
                         {
                             Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, Environment.TickCount);
