@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace System.Threading
 {
@@ -73,7 +74,7 @@ namespace System.Threading
 
         private PortableThreadPool()
         {
-            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)Environment.ProcessorCount;
+            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : DetermineMinThreads();
             if (_minThreads > MaxPossibleThreadCount)
             {
                 _minThreads = MaxPossibleThreadCount;
@@ -353,6 +354,17 @@ namespace System.Threading
             Interlocked.Increment(ref _separated.numRequestedWorkers);
             WorkerThread.MaybeAddWorkingWorker(this);
             GateThread.EnsureRunning(this);
+        }
+
+        private short DetermineMinThreads() {
+            if (X86Base.IsSupported)
+            {
+                if (X86Base.IsAuthenticAMD() && Environment.ProcessorCount >= 32)
+                {
+                    return 32;
+                }
+            }
+            return (short)Environment.ProcessorCount;
         }
     }
 }

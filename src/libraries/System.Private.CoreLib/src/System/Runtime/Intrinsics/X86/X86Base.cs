@@ -78,5 +78,11 @@ namespace System.Runtime.Intrinsics.X86
             __cpuidex(cpuInfo, functionId, subFunctionId);
             return (cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
         }
+
+        public static bool IsAuthenticAMD()
+        {
+            (int _, int ebx, int ecx, int edx) = CpuId(unchecked((int)0x80000000), 0x00000000);
+            return ebx == 0x68747541 && ecx == 0x444D4163 && edx == 0x69746E65;
+        }
     }
 }
