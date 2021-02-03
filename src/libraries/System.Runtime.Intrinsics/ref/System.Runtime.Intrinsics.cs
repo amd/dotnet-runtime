@@ -4191,6 +4191,8 @@ namespace System.Runtime.Intrinsics.X86
         internal X86Base() { }
         public static bool IsSupported { get { throw null; } }
         public static (int Eax, int Ebx, int Ecx, int Edx) CpuId(int functionId, int subFunctionId) { throw null; }
+
+        public static bool IsAuthenticAMD() { throw null; }
         public abstract partial class X64
         {
             internal X64() { }
