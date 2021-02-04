@@ -20,18 +20,6 @@ namespace System.Threading
                     AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.UnfairSemaphoreSpinLimit", 70, false),
                     onWait: () =>
                     {
-                        lock (Contention.ThreadPoolContention)
-                        {
-                            Contention.ThreadPoolContention.ReportWait();
-                            if (Contention.ThreadPoolContention.ContentionDetected && !Contention.ThreadPoolContention.AdjustingForContention)
-                            {
-                                int workerThreads, ioThreads;
-                                ThreadPool.GetMinThreads(out workerThreads, out ioThreads);
-                                ThreadPoolInstance.SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
-                                Contention.ThreadPoolContention.ReportThreadCountChange();
-                            }
-                        }
-
                         if (PortableThreadPoolEventSource.Log.IsEnabled())
                         {
                             PortableThreadPoolEventSource.Log.ThreadPoolWorkerThreadWait(
@@ -259,9 +247,9 @@ namespace System.Threading
             /// <returns>Whether or not this thread should stop processing work even if there is still work in the queue.</returns>
             internal static bool ShouldStopProcessingWorkNow(PortableThreadPool threadPoolInstance)
             {
-                ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
                 while (true)
                 {
+                    ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
                     // When there are more threads processing work than the thread count goal, hill climbing must have decided
                     // to decrease the number of threads. Stop processing if the counts can be updated. We may have more
                     // threads existing than the thread count goal and that is ok, the cold ones will eventually time out if
