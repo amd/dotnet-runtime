@@ -123,15 +123,6 @@ namespace System.Threading
                                 short newNumExistingThreads = (short)(numExistingThreads - 1);
                                 short newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, Math.Min(newNumExistingThreads, newCounts.NumThreadsGoal));
 
-                                if (Contention.ThreadPoolContention.ContentionDetected)
-                                {
-                                    int workerThreads, ioCompletionThreads;
-                                    ThreadPool.GetMinThreads(out workerThreads, out ioCompletionThreads);
-                                    threadPoolInstance.SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioCompletionThreads);
-                                    newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
-                                    Contention.ThreadPoolContention.ReportThreadCountChange();
-                                }
-
                                 newCounts.NumThreadsGoal = newNumThreadsGoal;
 
                                 ThreadCounts oldCounts = threadPoolInstance._separated.counts.InterlockedCompareExchange(newCounts, counts);
