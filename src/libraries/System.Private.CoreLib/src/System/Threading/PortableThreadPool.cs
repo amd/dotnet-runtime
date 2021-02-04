@@ -337,9 +337,9 @@ namespace System.Threading
 
         private void AdjustMinThreads()
         {
-            int _, ioThreads;
-            ThreadPool.GetMinThreads(out _, out ioThreads);
-            SetMinThreads(Math.Max(1, _minThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
+            int workerThreads, ioThreads;
+            ThreadPool.GetMinThreads(out workerThreads, out ioThreads);
+            SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
         }
 
         private bool ShouldAdjustMaxWorkersActive(int currentTimeMs)
