@@ -126,7 +126,10 @@ namespace System.Threading
 
                                 if (Contention.ThreadPoolContention.ContentionDetected)
                                 {
-                                    newNumThreadsGoal = Math.Max((short)1, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
+                                    int workerThreads, ioCompletionThreads;
+                                    ThreadPool.GetMinThreads(out workerThreads, out ioCompletionThreads);
+                                    threadPoolInstance.SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioCompletionThreads);
+                                    newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
                                     Contention.ThreadPoolContention.ReportThreadCountChange();
                                 }
 
