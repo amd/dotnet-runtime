@@ -249,9 +249,9 @@ namespace System.Threading
             /// <returns>Whether or not this thread should stop processing work even if there is still work in the queue.</returns>
             internal static bool ShouldStopProcessingWorkNow(PortableThreadPool threadPoolInstance)
             {
-                ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
                 while (true)
                 {
+                    ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
                     // When there are more threads processing work than the thread count goal, hill climbing must have decided
                     // to decrease the number of threads. Stop processing if the counts can be updated. We may have more
                     // threads existing than the thread count goal and that is ok, the cold ones will eventually time out if
