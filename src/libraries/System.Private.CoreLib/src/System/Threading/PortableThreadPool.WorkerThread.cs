@@ -20,7 +20,17 @@ namespace System.Threading
                     AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.UnfairSemaphoreSpinLimit", 70, false),
                     onWait: () =>
                     {
-                        Contention.ThreadPoolContention.ReportWait();
+                        lock (Contention.ThreadPoolContention)
+                        {
+                            Contention.ThreadPoolContention.ReportWait();
+                            if (Contention.ThreadPoolContention.ContentionDetected && !Contention.ThreadPoolContention.AdjustingForContention)
+                            {
+                                int workerThreads, ioThreads;
+                                ThreadPool.GetMinThreads(out workerThreads, out ioThreads);
+                                ThreadPoolInstance.SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
+                                Contention.ThreadPoolContention.ReportThreadCountChange();
+                            }
+                        }
 
                         if (PortableThreadPoolEventSource.Log.IsEnabled())
                         {
@@ -55,7 +65,6 @@ namespace System.Threading
                         while (TakeActiveRequest(threadPoolInstance))
                         {
                             Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, Environment.TickCount);
-                            // Contention.ThreadPoolContention.ReportWork();
                             if (!ThreadPoolWorkQueue.Dispatch())
                             {
                                 // ShouldStopProcessingWorkNow() caused the thread to stop processing work, and it would have
@@ -123,15 +132,6 @@ namespace System.Threading
                                 newCounts.SubtractNumExistingThreads(1);
                                 short newNumExistingThreads = (short)(numExistingThreads - 1);
                                 short newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, Math.Min(newNumExistingThreads, newCounts.NumThreadsGoal));
-
-                                if (Contention.ThreadPoolContention.ContentionDetected)
-                                {
-                                    int workerThreads, ioCompletionThreads;
-                                    ThreadPool.GetMinThreads(out workerThreads, out ioCompletionThreads);
-                                    threadPoolInstance.SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioCompletionThreads);
-                                    newNumThreadsGoal = Math.Max(threadPoolInstance._minThreads, (short)(numExistingThreads - Contention.ThreadPoolContention.StepDown));
-                                    Contention.ThreadPoolContention.ReportThreadCountChange();
-                                }
 
                                 newCounts.NumThreadsGoal = newNumThreadsGoal;
 
