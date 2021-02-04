@@ -238,6 +238,11 @@ namespace System.Threading
             {
                 AdjustMaxWorkersActive();
             }
+
+            if (ShouldAdjustMinThreads(currentTimeMs))
+            {
+                AdjustMinThreads();
+            }
         }
 
         internal void NotifyWorkItemProgress() =>
@@ -300,6 +305,11 @@ namespace System.Threading
                             {
                                 WorkerThread.MaybeAddWorkingWorker(this);
                             }
+
+                            if (newMax == _minThreads)
+                            {
+                                Contention.ThreadPoolContention.ReportBottomOut();
+                            }
                             break;
                         }
 
@@ -325,6 +335,13 @@ namespace System.Threading
             }
         }
 
+        private void AdjustMinThreads()
+        {
+            int _, ioThreads;
+            ThreadPool.GetMinThreads(out _, out ioThreads);
+            SetMinThreads(Math.Max(1, _minThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
+        }
+
         private bool ShouldAdjustMaxWorkersActive(int currentTimeMs)
         {
             // We need to subtract by prior time because Environment.TickCount can wrap around, making a comparison of absolute times unreliable.
@@ -342,6 +359,19 @@ namespace System.Threading
                 // implementation there are no retired threads, so only the count of threads processing work is considered.
                 ThreadCounts counts = _separated.counts.VolatileRead();
                 return counts.NumProcessingWork <= counts.NumThreadsGoal && !HillClimbing.IsDisabled;
+            }
+            return false;
+        }
+
+        private bool ShouldAdjustMinThreads(int currentTimeMs)
+        {
+            // We need to subtract by prior time because Environment.TickCount can wrap around, making a comparison of absolute times unreliable.
+            int priorTime = Volatile.Read(ref _separated.priorCompletedWorkRequestsTime);
+            int requiredInterval = _separated.nextCompletedWorkRequestsTime - priorTime;
+            int elapsedInterval = currentTimeMs - priorTime;
+            if (elapsedInterval >= requiredInterval)
+            {
+                return Contention.ThreadPoolContention.ContentionDetected && !Contention.ThreadPoolContention.AdjustingForContention;
             }
             return false;
         }

@@ -11,15 +11,15 @@ namespace System.Threading
 
             public static readonly bool IsDisabled = AppContextConfigHelper.GetBooleanConfig("System.Threading.ThreadPool.Contention.Disable", false);
 
-            private long _totalWaits;
+            private long _totalBottomOuts;
             private long _lastContentionAdjustment;
-            private readonly long _waitThreshold;
+            private readonly long _countThreshold;
             private readonly short _stepDown;
             private readonly long _contentionAdjustmentThreshold;
 
             public bool ContentionDetected
             {
-                get => Interlocked.Read(ref _totalWaits) >= _waitThreshold;
+                get => Interlocked.Read(ref _totalBottomOuts) >= _countThreshold;
             }
 
             public bool AdjustingForContention
@@ -34,23 +34,23 @@ namespace System.Threading
 
             private Contention()
             {
-                _waitThreshold = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.Contention.Threshold", 30, false);
+                _countThreshold = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.Contention.Threshold", 10, false);
                 _stepDown = AppContextConfigHelper.GetInt16Config("System.Threading.ThreadPool.Contention.StepDown", 4, false);
                 _contentionAdjustmentThreshold = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.Contention.AdjustmentThreshold", 500);
-                _totalWaits = 0;
+                _totalBottomOuts = 0;
+                _lastContentionAdjustment = Environment.TickCount;
             }
 
-            public void ReportWait() => Interlocked.Increment(ref _totalWaits);
-
-            public void ReportWork() => ResetWaits();
-
-            public void ReportThreadCountChange()
+            public void ReportBottomOut()
             {
-                ResetWaits();
+                Interlocked.Increment(ref _totalBottomOuts);
+            }
+
+            public void ReportThreadBoundsChange()
+            {
+                Interlocked.Exchange(ref _totalBottomOuts, 0);
                 Interlocked.Exchange(ref _lastContentionAdjustment, Environment.TickCount);
             }
-
-            private void ResetWaits() => Interlocked.Exchange(ref _totalWaits, 0);
         }
     }
 }
