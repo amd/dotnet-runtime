@@ -19,7 +19,34 @@ namespace System.Threading
 
             public bool ContentionDetected
             {
-                get => Interlocked.Read(ref _totalBottomOuts) >= _countThreshold;
+                get {
+                    LowLevelLock hillClimbingLock = PortableThreadPool.ThreadPoolInstance._hillClimbingThreadAdjustmentLock;
+                    HillClimbing hillClimber = HillClimbing.ThreadPoolHillClimber;
+                    int currentMinThreads = PortableThreadPool.ThreadPoolInstance._minThreads;
+                    int totalBottomOuts = 0;
+
+                    if (!hillClimbingLock.TryAcquire())
+                    {
+                        return false; // Hill climbing or something else might be making adjustments, just assume there is no contention for now
+                    }
+
+                    try
+                    {
+                        for (int i = 0; i < hillClimber._totalSamples; i++)
+                        {
+                            if (hillClimber._threadCounts[i] <= currentMinThreads)
+                            {
+                                totalBottomOuts++;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        hillClimbingLock.Release();
+                    }
+
+                    return totalBottomOuts >= _countThreshold;
+                }
             }
 
             public bool AdjustingForContention
@@ -39,11 +66,6 @@ namespace System.Threading
                 _contentionAdjustmentThreshold = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.Contention.AdjustmentThreshold", 500);
                 _totalBottomOuts = 0;
                 _lastContentionAdjustment = Environment.TickCount;
-            }
-
-            public void ReportBottomOut()
-            {
-                Interlocked.Increment(ref _totalBottomOuts);
             }
 
             public void ReportThreadBoundsChange()

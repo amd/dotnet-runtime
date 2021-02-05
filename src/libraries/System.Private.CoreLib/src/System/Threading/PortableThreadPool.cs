@@ -305,11 +305,6 @@ namespace System.Threading
                             {
                                 WorkerThread.MaybeAddWorkingWorker(this);
                             }
-
-                            if (newMax == _minThreads)
-                            {
-                                Contention.ThreadPoolContention.ReportBottomOut();
-                            }
                             break;
                         }
 
@@ -353,6 +348,7 @@ namespace System.Threading
                 ThreadCounts oldCounts = ThreadPoolInstance._separated.counts.InterlockedCompareExchange(newCounts, counts);
                 if (oldCounts == counts)
                 {
+                    Contention.ThreadPoolContention.ReportThreadBoundsChange();
                     HillClimbing.ThreadPoolHillClimber.ForceChange(newNumThreadsGoal, HillClimbing.StateOrTransition.Starvation);
                     return;
                 }
