@@ -32,9 +32,9 @@ namespace System.Threading
 
                     try
                     {
-                        for (int i = 0; i < hillClimber._totalSamples; i++)
+                        foreach (int threadCount in hillClimber._threadCounts)
                         {
-                            if (hillClimber._threadCounts[i] <= currentMinThreads)
+                            if (threadCount <= currentMinThreads)
                             {
                                 totalBottomOuts++;
                             }
