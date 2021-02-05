@@ -46,7 +46,7 @@ namespace System.Threading
             }
 
             private readonly int _wavePeriod;
-            private readonly int _samplesToMeasure;
+            internal readonly int _samplesToMeasure;
             private readonly double _targetThroughputRatio;
             private readonly double _targetSignalToNoiseRatio;
             private readonly double _maxChangePerSecond;
@@ -60,15 +60,15 @@ namespace System.Threading
             private readonly double _maxSampleError;
 
             private double _currentControlSetting;
-            private long _totalSamples;
+            internal long _totalSamples;
             private int _lastThreadCount;
             private double _averageThroughputNoise;
             private double _secondsElapsedSinceLastChange;
             private double _completionsSinceLastChange;
             private int _accumulatedCompletionCount;
             private double _accumulatedSampleDurationSeconds;
-            private readonly double[] _samples;
-            private readonly double[] _threadCounts;
+            internal readonly double[] _samples;
+            internal readonly double[] _threadCounts;
             private int _currentSampleMs;
 
             private readonly Random _randomIntervalGenerator = new Random();
