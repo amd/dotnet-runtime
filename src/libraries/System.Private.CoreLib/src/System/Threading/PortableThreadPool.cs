@@ -354,6 +354,7 @@ namespace System.Threading
                 if (oldCounts == counts)
                 {
                     HillClimbing.ThreadPoolHillClimber.ForceChange(newNumThreadsGoal, HillClimbing.StateOrTransition.Starvation);
+                    return;
                 }
 
                 counts = oldCounts.VolatileRead();
