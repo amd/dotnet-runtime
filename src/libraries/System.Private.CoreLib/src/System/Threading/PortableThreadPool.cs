@@ -339,7 +339,25 @@ namespace System.Threading
         {
             int workerThreads, ioThreads;
             ThreadPool.GetMinThreads(out workerThreads, out ioThreads);
-            SetMinThreads(Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown), ioThreads);
+
+            short newNumThreadsGoal = (short)Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown);
+            SetMinThreads(newNumThreadsGoal, ioThreads);
+
+            ThreadCounts counts = ThreadPoolInstance._separated.counts.VolatileRead();
+
+            while (true)
+            {
+                ThreadCounts newCounts = counts;
+                newCounts.NumThreadsGoal = newNumThreadsGoal;
+
+                ThreadCounts oldCounts = ThreadPoolInstance._separated.counts.InterlockedCompareExchange(newCounts, counts);
+                if (oldCounts == counts)
+                {
+                    HillClimbing.ThreadPoolHillClimber.ForceChange(newNumThreadsGoal, HillClimbing.StateOrTransition.Starvation);
+                }
+
+                counts = oldCounts.VolatileRead();
+            }
         }
 
         private bool ShouldAdjustMaxWorkersActive(int currentTimeMs)
