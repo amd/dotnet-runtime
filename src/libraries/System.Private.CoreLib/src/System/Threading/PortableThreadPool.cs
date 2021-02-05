@@ -334,8 +334,7 @@ namespace System.Threading
         {
             int workerThreads, ioThreads;
             ThreadPool.GetMinThreads(out workerThreads, out ioThreads);
-
-            short newNumThreadsGoal = (short)Math.Max(1, workerThreads - Contention.ThreadPoolContention.StepDown);
+            short newNumThreadsGoal = (short)(workerThreads / 2);
             SetMinThreads(newNumThreadsGoal, ioThreads);
 
             ThreadCounts counts = ThreadPoolInstance._separated.counts.VolatileRead();
