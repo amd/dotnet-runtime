@@ -84,8 +84,16 @@ void CodeGen::genHWIntrinsic(GenTreeHWIntrinsic* node)
     int                    numArgs     = HWIntrinsicInfo::lookupNumArgs(node);
 
     int ival = HWIntrinsicInfo::lookupIval(intrinsicId, compiler->compOpportunisticallyDependsOn(InstructionSet_AVX));
+    emitAttr simdSize = emitActualTypeSize(Compiler::getSIMDTypeForSize(node->gtSIMDSize));
+
+    assert(simdSize != 0);
 
     assert(HWIntrinsicInfo::RequiresCodegen(intrinsicId));
+
+    if (simdSize == EA_32BYTE)
+    {
+        SeenAVXInstruction();
+    }
 
     if (genIsTableDrivenHWIntrinsic(intrinsicId, category))
     {
@@ -101,9 +109,7 @@ void CodeGen::genHWIntrinsic(GenTreeHWIntrinsic* node)
 
         assert(numArgs >= 0);
         instruction ins = HWIntrinsicInfo::lookupIns(intrinsicId, baseType);
-        assert(ins != INS_invalid);
-        emitAttr simdSize = emitActualTypeSize(Compiler::getSIMDTypeForSize(node->gtSIMDSize));
-        assert(simdSize != 0);
+        assert(ins != INS_invalid);        
 
         switch (numArgs)
         {
@@ -1687,6 +1693,8 @@ void CodeGen::genAvxOrAvx2Intrinsic(GenTreeHWIntrinsic* node)
     emitter*       emit        = GetEmitter();
 
     genConsumeHWIntrinsicOperands(node);
+
+    SeenAVXInstruction();
 
     switch (intrinsicId)
     {

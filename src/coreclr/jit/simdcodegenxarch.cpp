@@ -2363,6 +2363,11 @@ void CodeGen::genSIMDIntrinsic(GenTreeSIMD* simdNode)
         noway_assert(!"SIMD intrinsic with unsupported base type.");
     }
 
+    if (simdNode->gtSIMDSize == 32)
+    {
+        SeenAVXInstruction();
+    }
+
     switch (simdNode->gtSIMDIntrinsicID)
     {
         case SIMDIntrinsicInit:

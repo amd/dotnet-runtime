@@ -900,6 +900,7 @@ void CodeGen::genCodeForBinary(GenTreeOp* treeNode)
         // all have RMW semantics if VEX support is not available
 
         bool isRMW = !compiler->canUseVexEncoding();
+        genMitigateAVXSSEPenaltyIfNeeded();
         inst_RV_RV_TT(ins, emitTypeSize(treeNode), targetReg, op1reg, op2, isRMW);
 
         genProduceReg(treeNode);
@@ -9008,3 +9009,21 @@ void CodeGen::genPushCalleeSavedRegisters()
 }
 
 #endif // TARGET_XARCH
+
+bool needVZeroUpper = false;
+
+void CodeGen::SeenAVXInstruction()
+{
+    needVZeroUpper = true;
+}
+
+void CodeGen::genMitigateAVXSSEPenaltyIfNeeded()
+{
+    if (!needVZeroUpper)
+    {
+        return;
+    }
+    assert(compiler->canUseVexEncoding());
+    instGen(INS_vzeroupper);
+    needVZeroUpper = false;
+}
