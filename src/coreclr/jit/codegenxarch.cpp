@@ -900,7 +900,6 @@ void CodeGen::genCodeForBinary(GenTreeOp* treeNode)
         // all have RMW semantics if VEX support is not available
 
         bool isRMW = !compiler->canUseVexEncoding();
-        genMitigateAVXSSEPenaltyIfNeeded();
         inst_RV_RV_TT(ins, emitTypeSize(treeNode), targetReg, op1reg, op2, isRMW);
 
         genProduceReg(treeNode);
@@ -1475,6 +1474,22 @@ void CodeGen::genCodeForTreeNode(GenTree* treeNode)
     {
         return;
     }
+
+#if defined(FEATURE_HW_INSTRINSICS) || defined(FEATURE_SIMD)
+    if (varTypeIsFloating(treeNode->TypeGet())
+#ifdef FEATURE_HW_INTRINSICS
+        && treeNode->gtOper != GT_HWINTRINSIC
+#endif // FEATURE_HW_INTRINSICS
+#ifdef FEATURE_SIMD
+        && treeNode->gtOper != GT_SIMD
+#endif // FEATURE_SIMD
+    )
+    {
+        genMitigateAVXSSEPenaltyIfNeeded();
+    }
+#endif // FEATURE_HW_INSTRINSICS || FEATURE_SIMD
+
+
 
     switch (treeNode->gtOper)
     {
