@@ -1537,11 +1537,15 @@ public:
     void inst_JCC(GenCondition condition, BasicBlock* target);
     void inst_SETCC(GenCondition condition, var_types type, regNumber dstReg);
 
-// AVX->SSE Transition Penalty Mitigation
+#if defined(TARGET_XARCH) && (defined(FEATURE_SIMD) || defined(FEATURE_HW_INTRINSICS))
+    // AVX->SSE Transition Penalty Mitigation
 private:
 
     void SeenAVXInstruction();
     void genMitigateAVXSSEPenaltyIfNeeded();
+    void ResetAVXTracker();
+#endif // defined(TARGET_XARCH) && (defined(FEATURE_SIMD) || defined(FEATURE_HW_INTRINSICS))
+
 };
 
 /*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

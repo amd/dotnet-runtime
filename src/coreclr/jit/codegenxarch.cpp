@@ -9025,6 +9025,8 @@ void CodeGen::genPushCalleeSavedRegisters()
 
 #endif // TARGET_XARCH
 
+#if defined(TARGET_XARCH) && (defined(FEATURE_SIMD) || defined(FEATURE_HW_INTRINSICS))
+
 bool needVZeroUpper = false;
 
 void CodeGen::SeenAVXInstruction()
@@ -9042,3 +9044,10 @@ void CodeGen::genMitigateAVXSSEPenaltyIfNeeded()
     instGen(INS_vzeroupper);
     needVZeroUpper = false;
 }
+
+void CodeGen::ResetAVXTracker() {
+    needVZeroUpper = false;
+}
+
+#endif // defined(TARGET_XARCH) && (defined(FEATURE_SIMD) || defined(FEATURE_HW_INTRINSICS))
+

@@ -167,6 +167,10 @@ void CodeGen::genCodeForBBlist()
 
 #endif // defined(DEBUG) && defined(TARGET_XARCH)
 
+    #if defined(TARGET_XARCH) && (defined(FEATURE_HW_INTRINSICS) || defined(FEATURE_SIMD))
+    ResetAVXTracker();
+    #endif
+
     // Prepare the blocks for exception handling codegen: mark the blocks that needs labels.
     genPrepForEHCodegen();
 
