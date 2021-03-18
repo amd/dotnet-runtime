@@ -363,6 +363,10 @@ namespace System.Threading
                 {
                     return 32;
                 }
+                else if (X86Base.IsAuthenticAMD())
+                {
+                    return (short)(Environment.ProcessorCount / 2);
+                }
             }
             return (short)Environment.ProcessorCount;
         }
