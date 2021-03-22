@@ -359,14 +359,7 @@ namespace System.Threading
         private short DetermineMinThreads() {
             if (X86Base.IsSupported)
             {
-                if (X86Base.IsAuthenticAMD() && Environment.ProcessorCount >= 32)
-                {
-                    return 32;
-                }
-                else if (X86Base.IsAuthenticAMD())
-                {
-                    return (short)(Environment.ProcessorCount / 2);
-                }
+                return (short)Math.Max((Environment.ProcessorCount / 2), 32);
             }
             return (short)Environment.ProcessorCount;
         }
