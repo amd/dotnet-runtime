@@ -359,7 +359,7 @@ namespace System.Threading
         private short DetermineMinThreads() {
             if (X86Base.IsSupported)
             {
-                return (short)Math.Max((Environment.ProcessorCount / 2), 32);
+                return (short)Math.Min((Environment.ProcessorCount / 2), 32);
             }
             return (short)Environment.ProcessorCount;
         }
