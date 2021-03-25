@@ -144,7 +144,7 @@ function_name() to call the system's implementation
 
 /* Include our configuration information so it's always present when
    compiling PAL implementation files. */
-#include "config.h"
+#include "pal.config.generated.h"
 
 #ifdef DEBUG
 #define _ENABLE_DEBUG_MESSAGES_ 1

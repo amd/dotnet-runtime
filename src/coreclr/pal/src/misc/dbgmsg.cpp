@@ -23,7 +23,7 @@ Abstract:
 #include "pal/malloc.hpp"
 #include "pal/file.hpp"
 
-#include "config.h"
+#include "pal.config.generated.h"
 #include "pal/dbgmsg.h"
 #include "pal/cruntime.h"
 #include "pal/critsect.h"

@@ -153,7 +153,7 @@ Using Debug channels at Run Time
 #define _PAL_DBGMSG_H_
 
 #include "pal/palinternal.h"
-#include "config.h"
+#include "pal.config.generated.h"
 #include "pal/perftrace.h"
 #include "pal/debug.h"
 #include "pal/thread.hpp"

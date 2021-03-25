@@ -19,7 +19,7 @@ Abstract:
 #ifndef _PAL_SEH_HPP_
 #define _PAL_SEH_HPP_
 
-#include "config.h"
+#include "pal.config.generated.h"
 #include "pal/palinternal.h"
 #include "pal/corunix.hpp"
 

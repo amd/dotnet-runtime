@@ -40,7 +40,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifdef HOST_UNIX
 
-#include "config.h"
+#include "pal.config.generated.h"
 #include "pal/palinternal.h"
 #include "pal/dbgmsg.h"
 #include "pal/critsect.h"

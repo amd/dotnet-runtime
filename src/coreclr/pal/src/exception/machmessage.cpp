@@ -13,7 +13,7 @@ Abstract:
 
 --*/
 
-#include "config.h"
+#include "pal.config.generated.h"
 #include "pal/dbgmsg.h"
 #include "pal/environ.h"
 #include "pal/malloc.hpp"

@@ -27,7 +27,7 @@ Abstract:
 
 
 #if HAVE_CONFIG_H
-#include "config.h"
+#include "pal.config.generated.h"
 #endif
 
 #include <wctype.h>
