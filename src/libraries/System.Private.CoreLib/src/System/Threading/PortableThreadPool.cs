@@ -357,7 +357,7 @@ namespace System.Threading
         }
 
         private short DetermineMinThreads() {
-            if (X86Base.IsSupported)
+            if (X86Base.IsSupported && !Environment.IsSingleProcessor)
             {
                 return (short)Math.Min((Environment.ProcessorCount / 2), 32);
             }
