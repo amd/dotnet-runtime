@@ -358,7 +358,7 @@ namespace System.Threading
 
         private short DetermineMinThreads() {
             int _, io;
-            ThreadPool.GetAvailableThreads(out _, out io);
+            ThreadPool.GetMinThreads(out _, out io);
             int defaultCount = io < Environment.ProcessorCount ?
                 Environment.ProcessorCount - io :
                 Environment.ProcessorCount;
