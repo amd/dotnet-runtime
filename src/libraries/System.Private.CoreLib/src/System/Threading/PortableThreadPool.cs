@@ -357,11 +357,16 @@ namespace System.Threading
         }
 
         private short DetermineMinThreads() {
-            if (X86Base.IsSupported && !Environment.IsSingleProcessor)
-            {
-                return (short)Math.Min((Environment.ProcessorCount / 2), 32);
-            }
-            return (short)Environment.ProcessorCount;
+            int _, io;
+            ThreadPool.GetAvailableThreads(out _, out io);
+            int defaultCount = io < Environment.ProcessorCount ?
+                Environment.ProcessorCount - io :
+                Environment.ProcessorCount;
+            //if (X86Base.IsSupported && !Environment.IsSingleProcessor)
+            //{
+            //    defaultCount = Math.Min((defaultCount / 2), 32);
+            //}
+            return (short)defaultCount;
         }
     }
 }
