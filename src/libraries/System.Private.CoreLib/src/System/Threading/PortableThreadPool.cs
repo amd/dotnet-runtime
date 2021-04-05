@@ -80,7 +80,7 @@ namespace System.Threading
                 _minThreads = MaxPossibleThreadCount;
             }
 
-            _maxThreads = s_forcedMaxWorkerThreads > 0 ? s_forcedMaxWorkerThreads : DefaultMaxWorkerThreadCount;
+            _maxThreads = s_forcedMaxWorkerThreads > 0 ? s_forcedMaxWorkerThreads : MaxPossibleThreadCount; //DetermineMaxThreads();
             if (_maxThreads > MaxPossibleThreadCount)
             {
                 _maxThreads = MaxPossibleThreadCount;
@@ -357,11 +357,25 @@ namespace System.Threading
         }
 
         private short DetermineMinThreads() {
-            int _, io;
-            ThreadPool.GetMinThreads(out _, out io);
+            int workers, io;
+            ThreadPool.GetMinThreads(out workers, out io);
             int defaultCount = io < Environment.ProcessorCount ?
                 Environment.ProcessorCount - io :
                 Environment.ProcessorCount;
+            //if (X86Base.IsSupported && !Environment.IsSingleProcessor)
+            //{
+            //    defaultCount = Math.Min((defaultCount / 2), 32);
+            //}
+            return (short)defaultCount;
+        }
+
+        private short DetermineMaxThreads()
+        {
+            int _, io;
+            ThreadPool.GetMaxThreads(out _, out io);
+            int defaultCount = io < DefaultMaxWorkerThreadCount ?
+                DefaultMaxWorkerThreadCount - io :
+                DefaultMaxWorkerThreadCount;
             //if (X86Base.IsSupported && !Environment.IsSingleProcessor)
             //{
             //    defaultCount = Math.Min((defaultCount / 2), 32);
