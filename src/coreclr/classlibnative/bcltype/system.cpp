@@ -203,6 +203,32 @@ INT32 QCALLTYPE SystemNative::GetProcessorCount()
     return processorCount;
 }
 
+INT32 QCALLTYPE SystemNative::GetHighestNumaNode()
+{
+    QCALL_CONTRACT;
+
+    INT32 highestNode = -1;
+
+    BEGIN_QCALL;
+
+    END_QCALL;
+
+    return highestNode;
+}
+
+BOOL QCALLTYPE SystemNative::IsNumaAvailable()
+{
+    QCALL_CONTRACT;
+
+    BOOL isAvailable = false;
+
+    BEGIN_QCALL;
+
+    END_QCALL;
+
+    return isAvailable;
+}
+
 // FailFast is supported in BCL.small as internal to support failing fast in places where EEE used to be thrown.
 //
 // Static message buffer used by SystemNative::FailFast to avoid reliance on a

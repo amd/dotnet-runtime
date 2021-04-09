@@ -139,6 +139,8 @@ FCFuncStart(gEnvironmentFuncs)
     FCFuncElement("set_ExitCode", SystemNative::SetExitCode)
     FCFuncElement("get_ExitCode", SystemNative::GetExitCode)
     QCFuncElement("GetProcessorCount", SystemNative::GetProcessorCount)
+    QCFuncElement("GetHighestNumaNode", SystemNative::GetHighestNumaNode)
+    QCFuncElement("IsNumaAvailable", SystemNative::IsNumaAvailable)
     FCFuncElement("GetCommandLineArgsNative", SystemNative::GetCommandLineArgs)
 
     FCFuncElementSig("FailFast", &gsig_SM_Str_RetVoid, SystemNative::FailFast)

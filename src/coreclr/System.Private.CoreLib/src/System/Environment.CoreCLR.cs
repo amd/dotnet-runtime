@@ -87,6 +87,12 @@ namespace System
         [DllImport(RuntimeHelpers.QCall, CharSet = CharSet.Unicode)]
         private static extern int GetProcessorCount();
 
+        [DllImport(RuntimeHelpers.QCall, CharSet = CharSet.Unicode)]
+        private static extern bool IsNumaAvailable();
+
+        [DllImport(RuntimeHelpers.QCall, CharSet = CharSet.Unicode)]
+        private static extern int GetHighestNumaNode();
+
         // Used by VM
         internal static string? GetResourceStringLocal(string key) => SR.GetResourceString(key);
 

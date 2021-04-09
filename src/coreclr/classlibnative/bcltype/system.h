@@ -58,6 +58,11 @@ public:
     // Returns the number of logical processors that can be used by managed code
     static INT32 QCALLTYPE GetProcessorCount();
 
+    // Return NUMA information
+    // TODO: Improve this comment
+    static INT32 QCALLTYPE GetHighestNumaNode();
+    static BOOL QCALLTYPE IsNumaAvailable();
+
     static FCDECL0(FC_BOOL_RET, IsServerGC);
 
     // Return a method info for the method were the exception was thrown

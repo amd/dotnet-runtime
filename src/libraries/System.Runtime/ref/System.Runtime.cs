@@ -1978,6 +1978,11 @@ namespace System
             DoNotVerify = 16384,
             Create = 32768,
         }
+
+        public static partial class NUMA
+        {
+            public static bool IsAvailable {  get { throw null; } }
+        }
     }
     public enum EnvironmentVariableTarget
     {
