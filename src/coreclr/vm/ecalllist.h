@@ -825,6 +825,7 @@ FCFuncStart(gInterlockedFuncs)
 
     FCIntrinsic("MemoryBarrier", COMInterlocked::FCMemoryBarrier, CORINFO_INTRINSIC_MemoryBarrier)
     FCIntrinsic("ReadMemoryBarrier", COMInterlocked::FCMemoryBarrierLoad, CORINFO_INTRINSIC_MemoryBarrierLoad)
+    FCIntrinsic("ReadMemoryBarrierNoGC", COMInterlocked::FCMemoryBarrierLoadNoGC, CORINFO_INTRINSIC_MemoryBarrierLoadNoGC)
     QCFuncElement("_MemoryBarrierProcessWide", COMInterlocked::MemoryBarrierProcessWide)
 FCFuncEnd()
 

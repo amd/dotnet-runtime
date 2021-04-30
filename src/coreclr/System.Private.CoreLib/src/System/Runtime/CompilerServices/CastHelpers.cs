@@ -396,60 +396,35 @@ namespace System.Runtime.CompilerServices
         [DebuggerStepThrough]
         private static object? ChkCastInterface(void* toTypeHnd, object? obj)
         {
-            const int unrollSize = 4;
-
             if (obj != null)
             {
                 MethodTable* mt = RuntimeHelpers.GetMethodTable(obj);
-                nint interfaceCount = mt->InterfaceCount;
+                nuint interfaceCount = mt->InterfaceCount;
                 if (interfaceCount == 0)
                 {
                     goto slowPath;
                 }
 
                 MethodTable** interfaceMap = mt->InterfaceMap;
-                if (interfaceCount < unrollSize)
+                for (nuint i = 0; ; i += 4)
                 {
-                    // If not enough for unrolled, jmp straight to small loop
-                    // as we already know there is one or more interfaces so don't need to check again.
-                    goto few;
-                }
-
-                do
-                {
-                    if (interfaceMap[0] == toTypeHnd ||
-                        interfaceMap[1] == toTypeHnd ||
-                        interfaceMap[2] == toTypeHnd ||
-                        interfaceMap[3] == toTypeHnd)
-                    {
+                    if (interfaceMap[i + 0] == toTypeHnd)
                         goto done;
-                    }
-
-                    // Assign next offset
-                    interfaceMap += unrollSize;
-                    interfaceCount -= unrollSize;
-                } while (interfaceCount >= unrollSize);
-
-                if (interfaceCount == 0)
-                {
-                    // If none remaining, skip the short loop
-                    goto slowPath;
-                }
-
-            few:
-                do
-                {
-                    if (interfaceMap[0] == toTypeHnd)
-                    {
+                    if (--interfaceCount == 0)
+                        goto slowPath;
+                    if (interfaceMap[i + 1] == toTypeHnd)
                         goto done;
-                    }
-
-                    // Assign next offset
-                    interfaceMap++;
-                    interfaceCount--;
-                } while (interfaceCount > 0);
-
-                goto slowPath;
+                    if (--interfaceCount == 0)
+                        goto slowPath;
+                    if (interfaceMap[i + 2] == toTypeHnd)
+                        goto done;
+                    if (--interfaceCount == 0)
+                        goto slowPath;
+                    if (interfaceMap[i + 3] == toTypeHnd)
+                        goto done;
+                    if (--interfaceCount == 0)
+                        goto slowPath;
+                }
             }
 
         done:

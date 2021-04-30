@@ -228,6 +228,7 @@ public:
 
         static FCDECL0(void, FCMemoryBarrier);
         static FCDECL0(void, FCMemoryBarrierLoad);
+        static FCDECL0(void, FCMemoryBarrierLoadNoGC);
         static void QCALLTYPE MemoryBarrierProcessWide();
 };
 

@@ -223,6 +223,13 @@ namespace System.Threading
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern void ReadMemoryBarrier();
 
+        /// <summary>
+        /// Synchronizes memory access in the same way as <see cref="ReadMemoryBarrier"/>, but does not force a GC poll after.
+        /// </summary>
+        [Intrinsic]
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        internal static extern void ReadMemoryBarrierNoGC();
+
         [DllImport(RuntimeHelpers.QCall, CharSet = CharSet.Unicode)]
         private static extern void _MemoryBarrierProcessWide();
 
