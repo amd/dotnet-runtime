@@ -32,14 +32,32 @@ __declspec(selectany) __declspec(thread) ThreadLocalInfo gCurrentThreadInfo;
 EXTERN_C __thread ThreadLocalInfo gCurrentThreadInfo;
 #endif
 
+#define PREFETCH_THREAD(addr)
+
+#ifdef _MSC_VER
+#include "winnt.h"
+#undef PREFETCH_THREAD
+#define PREFETCH_THREAD(addr) PreFetchCacheLine(PF_TEMPORAL_LEVEL_1, addr)
+#endif
+
+#ifdef HOST_UNIX
+#undef PREFETCH_THREAD
+#define PREFETCH_THREAD(addr) __builtin_prefetch(addr)
+#endif
+
 inline Thread* GetThreadNULLOk()
 {
-    return gCurrentThreadInfo.m_pThread;
+    PREFETCH_THREAD((void*)(&gCurrentThreadInfo) + sizeof(ThreadLocalInfo));
+    Thread* pThread = gCurrentThreadInfo.m_pThread;
+    PREFETCH_THREAD((void*)(pThread) + sizeof(Thread));
+    return pThread;
 }
 
 inline Thread* GetThread()
 {
+    PREFETCH_THREAD((void*)(&gCurrentThreadInfo) + sizeof(ThreadLocalInfo));
     Thread* pThread = gCurrentThreadInfo.m_pThread;
+    PREFETCH_THREAD((void*)(pThread) + sizeof(Thread));
     _ASSERTE(pThread);
     return pThread;
 }

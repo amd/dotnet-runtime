@@ -70,7 +70,7 @@ NESTED_ENTRY JIT_BoxFastMP_InlineGetThread, _TEXT
 
         ; m_BaseSize is guaranteed to be a multiple of 8.
 
-        INLINE_GETTHREAD r11
+        INLINE_GETTHREAD_PREFETCH r11, OFFSET__Thread__m_alloc_context__alloc_ptr
         mov     r10, [r11 + OFFSET__Thread__m_alloc_context__alloc_limit]
         mov     rax, [r11 + OFFSET__Thread__m_alloc_context__alloc_ptr]
 

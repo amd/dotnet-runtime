@@ -205,6 +205,20 @@ INLINE_GETTHREAD macro Reg
 
         endm
 
+INLINE_GETTHREAD_PREFETCH macro Reg, Ofs
+
+        EXTERN _tls_index : DWORD
+        EXTERN gCurrentThreadInfo:DWORD
+
+        mov     r11d, [_tls_index]
+        mov     rax, gs:[OFFSET__TEB__ThreadLocalStoragePointer]
+        mov     rax, [rax + r11 * 8]
+        mov     r11d, SECTIONREL gCurrentThreadInfo
+        mov     Reg, [rax + r11]
+        prefetch [Reg + Ofs]
+
+        endm
+
 ; if you change this code there will be corresponding code in JITInterfaceGen.cpp which will need to be changed
 ;
 
