@@ -127,8 +127,7 @@ namespace System.Runtime.CompilerServices
                         // - use acquires for both _source and _targetAndResults or
                         // - issue a load barrier before reading _version
                         // benchmarks on available hardware show that use of a read barrier is cheaper.
-                        //Interlocked.ReadMemoryBarrierNoGC();
-                        Interlocked.ReadMemoryBarrier();
+                        Interlocked.ReadMemoryBarrierNoGC();
                         if (version != pEntry._version)
                         {
                             // oh, so close, the entry is in inconsistent state.
