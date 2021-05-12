@@ -48,6 +48,14 @@ namespace System.Threading
 
                 while (true)
                 {
+
+                    ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
+                    if (counts.NumExistingThreads > counts.NumProcessingWork || counts.NumProcessingWork >= counts.NumThreadsGoal)
+                    {
+                        // Fast path, try and avoid waiting on the semaphore.
+                        return;
+                    }
+
                     bool spinWait = true;
                     while (semaphore.Wait(ThreadPoolThreadTimeoutMs, spinWait))
                     {
@@ -103,7 +111,7 @@ namespace System.Threading
                         // We are going to decrement the number of exisiting threads to no longer include this one
                         // and then change the max number of threads in the thread pool to reflect that we don't need as many
                         // as we had. Finally, we are going to tell hill climbing that we changed the max number of threads.
-                        ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
+                        counts = threadPoolInstance._separated.counts.VolatileRead();
                         while (true)
                         {
                             // Since this thread is currently registered as an existing thread, if more work comes in meanwhile,
