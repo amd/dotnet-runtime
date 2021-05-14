@@ -73,7 +73,7 @@ namespace System.Threading
 
         private PortableThreadPool()
         {
-            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : (short)Environment.ProcessorCount;
+            _minThreads = s_forcedMinWorkerThreads > 0 ? s_forcedMinWorkerThreads : GetStartingMinThreads();
             if (_minThreads > MaxPossibleThreadCount)
             {
                 _minThreads = MaxPossibleThreadCount;
@@ -356,6 +356,13 @@ namespace System.Threading
             Interlocked.Increment(ref _separated.numRequestedWorkers);
             WorkerThread.MaybeAddWorkingWorker(this);
             GateThread.EnsureRunning(this);
+        }
+
+        private short GetStartingMinThreads()
+        {
+            int _, ioThreads;
+            ThreadPool.GetMaxThreads(out _, out ioThreads);
+            return (short)Math.Max(1, Environment.ProcessorCount - ioThreads);
         }
     }
 }
