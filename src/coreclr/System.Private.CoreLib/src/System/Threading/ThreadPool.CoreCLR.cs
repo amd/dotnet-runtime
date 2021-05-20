@@ -469,7 +469,7 @@ namespace System.Threading
         private static extern bool SetMaxThreadsNative(int workerThreads, int completionPortThreads);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern void GetMinThreadsNative(out int workerThreads, out int completionPortThreads);
+        internal static extern void GetMinThreadsNative(out int workerThreads, out int completionPortThreads);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void GetMaxThreadsNative(out int workerThreads, out int completionPortThreads);

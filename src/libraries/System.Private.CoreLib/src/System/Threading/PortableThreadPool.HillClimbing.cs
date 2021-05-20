@@ -77,6 +77,9 @@ namespace System.Threading
             private int _logStart; // SOS's ThreadPool command depends on this name
             private int _logSize; // SOS's ThreadPool command depends on this name
 
+            private readonly int[] _threadWaitTimes;
+            private int _waitTimesIndex;
+
             public HillClimbing()
             {
                 _wavePeriod = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.HillClimbing.WavePeriod", 4, false);
@@ -107,6 +110,8 @@ namespace System.Threading
                 _threadCounts = new double[_samplesToMeasure];
 
                 _currentSampleMs = _randomIntervalGenerator.Next(_sampleIntervalMsLow, _sampleIntervalMsHigh + 1);
+
+                _threadWaitTimes = new int[_samplesToMeasure];
             }
 
             public (int newThreadCount, int newSampleMs) Update(int currentThreadCount, double sampleDurationSeconds, int numCompletions)
@@ -445,6 +450,28 @@ namespace System.Threading
                     q1 = q0;
                 }
                 return new Complex(q1 - q2 * cos, q2 * Math.Sin(w)) / numSamples;
+            }
+
+            public void LogWait(int wait)
+            {
+                _threadWaitTimes[_waitTimesIndex % _samplesToMeasure] = wait;
+                _waitTimesIndex++;
+            }
+
+            public void AdjustForWaiting()
+            {
+                int waitSum = 0;
+                for (int i = 0; i < _samplesToMeasure; i++)
+                    waitSum += _threadWaitTimes[i];
+                double waitAvg = (double)waitSum / (double)_samplesToMeasure;
+                if (waitAvg >= 1000)
+                {
+                    int currMinThreads = ThreadPoolInstance.GetMinThreads();
+                    int newMinThreads = Math.Max(1, currMinThreads / 2);
+                    ThreadPool.GetMinThreadsNative(out int _, out int ioThreads);
+                    ThreadPoolInstance.SetMinThreads(newMinThreads, ioThreads);
+                    ForceChange(newMinThreads, StateOrTransition.Starvation);
+                }
             }
         }
     }

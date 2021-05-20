@@ -22,6 +22,7 @@ namespace System.Threading
                     AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.UnfairSemaphoreSpinLimit", 70, false),
                     onWait: () =>
                     {
+                        _startWait = Environment.TickCount;
                         if (NativeRuntimeEventSource.Log.IsEnabled())
                         {
                             NativeRuntimeEventSource.Log.ThreadPoolWorkerThreadWait(
@@ -31,6 +32,8 @@ namespace System.Threading
 
             private static readonly ThreadStart s_workerThreadStart = WorkerThreadStart;
 
+            [ThreadStatic]
+            private static volatile int _startWait;
             private static void WorkerThreadStart()
             {
                 Thread.CurrentThread.SetThreadPoolWorkerThreadName();
@@ -50,15 +53,20 @@ namespace System.Threading
                 {
 
                     ThreadCounts counts = threadPoolInstance._separated.counts.VolatileRead();
-                    if (counts.NumExistingThreads > counts.NumProcessingWork || counts.NumProcessingWork >= counts.NumThreadsGoal)
-                    {
-                        // Fast path, try and avoid waiting on the semaphore.
-                        return;
-                    }
 
                     bool spinWait = true;
                     while (semaphore.Wait(ThreadPoolThreadTimeoutMs, spinWait))
                     {
+                        hillClimbingThreadAdjustmentLock.Acquire();
+                        try
+                        {
+                            HillClimbing.ThreadPoolHillClimber.LogWait(Environment.TickCount - _startWait);
+                        }
+                        finally
+                        {
+                            hillClimbingThreadAdjustmentLock.Release();
+                        }
+
                         bool alreadyRemovedWorkingWorker = false;
                         while (TakeActiveRequest(threadPoolInstance))
                         {
@@ -107,6 +115,8 @@ namespace System.Threading
                     hillClimbingThreadAdjustmentLock.Acquire();
                     try
                     {
+                        HillClimbing.ThreadPoolHillClimber.LogWait(Environment.TickCount - _startWait);
+
                         // At this point, the thread's wait timed out. We are shutting down this thread.
                         // We are going to decrement the number of exisiting threads to no longer include this one
                         // and then change the max number of threads in the thread pool to reflect that we don't need as many
