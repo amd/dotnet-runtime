@@ -80,6 +80,9 @@ namespace System.Threading
             private readonly int[] _threadWaitTimes;
             private int _waitTimesIndex;
 
+            private readonly int[] _threadWorkTimes;
+            private int _workTimesIndex;
+
             public HillClimbing()
             {
                 _wavePeriod = AppContextConfigHelper.GetInt32Config("System.Threading.ThreadPool.HillClimbing.WavePeriod", 4, false);
@@ -112,6 +115,8 @@ namespace System.Threading
                 _currentSampleMs = _randomIntervalGenerator.Next(_sampleIntervalMsLow, _sampleIntervalMsHigh + 1);
 
                 _threadWaitTimes = new int[_samplesToMeasure];
+
+                _threadWorkTimes = new int[_samplesToMeasure];
             }
 
             public (int newThreadCount, int newSampleMs) Update(int currentThreadCount, double sampleDurationSeconds, int numCompletions)
@@ -461,10 +466,17 @@ namespace System.Threading
             public void AdjustForWaiting()
             {
                 int waitSum = 0;
+                int workSum = 0;
                 for (int i = 0; i < _samplesToMeasure; i++)
+                {
                     waitSum += _threadWaitTimes[i];
+                    workSum += _threadWorkTimes[i];
+                }
+
                 double waitAvg = (double)waitSum / (double)_samplesToMeasure;
-                if (waitAvg >= 1000)
+                double workAvg = (double)workSum / (double)_samplesToMeasure;
+
+                if (workAvg < waitAvg)
                 {
                     int currMinThreads = ThreadPoolInstance.GetMinThreads();
                     int newMinThreads = Math.Max(1, currMinThreads / 2);
@@ -472,6 +484,12 @@ namespace System.Threading
                     ThreadPoolInstance.SetMinThreads(newMinThreads, ioThreads);
                     ForceChange(newMinThreads, StateOrTransition.Starvation);
                 }
+            }
+
+            public void LogWork(int work)
+            {
+                _threadWorkTimes[_workTimesIndex % _samplesToMeasure] = work;
+                _workTimesIndex++;
             }
         }
     }
