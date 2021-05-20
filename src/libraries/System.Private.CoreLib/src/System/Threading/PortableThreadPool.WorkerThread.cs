@@ -70,7 +70,8 @@ namespace System.Threading
                         bool alreadyRemovedWorkingWorker = false;
                         while (TakeActiveRequest(threadPoolInstance))
                         {
-                            Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, Environment.TickCount);
+                            int startWorkTime = Environment.TickCount;
+                            Volatile.Write(ref threadPoolInstance._separated.lastDequeueTime, startWorkTime);
                             if (!ThreadPoolWorkQueue.Dispatch())
                             {
                                 // ShouldStopProcessingWorkNow() caused the thread to stop processing work, and it would have
@@ -78,6 +79,16 @@ namespace System.Threading
                                 // decreases the worker thread count goal.
                                 alreadyRemovedWorkingWorker = true;
                                 break;
+                            }
+
+                            hillClimbingThreadAdjustmentLock.Acquire();
+                            try
+                            {
+                                HillClimbing.ThreadPoolHillClimber.LogWork(Environment.TickCount - startWorkTime);
+                            }
+                            finally
+                            {
+                                hillClimbingThreadAdjustmentLock.Release();
                             }
 
                             if (threadPoolInstance._separated.numRequestedWorkers <= 0)
