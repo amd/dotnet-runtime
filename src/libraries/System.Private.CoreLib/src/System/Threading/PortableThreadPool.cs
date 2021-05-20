@@ -280,6 +280,7 @@ namespace System.Threading
 
                     ThreadCounts currentCounts = _separated.counts.VolatileRead();
                     int newMax;
+                    HillClimbing.ThreadPoolHillClimber.AdjustForWaiting();
                     (newMax, _threadAdjustmentIntervalMs) = HillClimbing.ThreadPoolHillClimber.Update(currentCounts.NumThreadsGoal, elapsedSeconds, numCompletions);
 
                     while (newMax != currentCounts.NumThreadsGoal)
@@ -357,9 +358,10 @@ namespace System.Threading
 
         private short GetStartingMinThreads()
         {
-            int _, ioThreads;
-            ThreadPool.GetMaxThreads(out _, out ioThreads);
-            return (short)Math.Max(1, Environment.ProcessorCount - ioThreads);
+            // int _, ioThreads;
+            // ThreadPool.GetMaxThreads(out _, out ioThreads);
+            // return (short)Math.Max(1, Environment.ProcessorCount - ioThreads);
+            return (short)Environment.ProcessorCount;
         }
     }
 }
