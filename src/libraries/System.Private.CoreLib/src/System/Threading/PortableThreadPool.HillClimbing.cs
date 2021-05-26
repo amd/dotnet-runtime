@@ -82,6 +82,7 @@ namespace System.Threading
 
             private readonly int[] _threadWorkTimes;
             private int _workTimesIndex;
+            private int _workWaitAdjustCount, _workWaitAdjustThreshold;
 
             public HillClimbing()
             {
@@ -115,8 +116,8 @@ namespace System.Threading
                 _currentSampleMs = _randomIntervalGenerator.Next(_sampleIntervalMsLow, _sampleIntervalMsHigh + 1);
 
                 _threadWaitTimes = new int[_samplesToMeasure];
-
                 _threadWorkTimes = new int[_samplesToMeasure];
+                _workWaitAdjustThreshold = 5;
             }
 
             public (int newThreadCount, int newSampleMs) Update(int currentThreadCount, double sampleDurationSeconds, int numCompletions)
@@ -345,10 +346,20 @@ namespace System.Threading
                 int newThreadCount = (int)(_currentControlSetting + newThreadWaveMagnitude * ((_totalSamples / (_wavePeriod / 2)) % 2));
 
                 //
-                // Make sure the new thread count doesn't exceed the ThreadPool's limits
+                // Make sure the new thread count doesn't exceed the ThreadPool's limits, but allow dropping below minThreads
+                // if threads are waiting more than working.
                 //
                 newThreadCount = Math.Min(maxThreads, newThreadCount);
-                newThreadCount = Math.Max(minThreads, newThreadCount);
+
+                (double waitAvg, double workAvg) = GetWorkWaitValues();
+                if (workAvg >= waitAvg)
+                {
+                    newThreadCount = Math.Max(minThreads, newThreadCount);
+                }
+                else
+                {
+                    state = StateOrTransition.Starvation;
+                }
 
                 //
                 // Record these numbers for posterity
@@ -465,23 +476,22 @@ namespace System.Threading
 
             public void AdjustForWaiting()
             {
-                int waitSum = 0;
-                int workSum = 0;
-                for (int i = 0; i < _samplesToMeasure; i++)
-                {
-                    waitSum += _threadWaitTimes[i];
-                    workSum += _threadWorkTimes[i];
-                }
-
-                double waitAvg = (double)waitSum / (double)_samplesToMeasure;
-                double workAvg = (double)workSum / (double)_samplesToMeasure;
+                (double waitAvg, double workAvg) = GetWorkWaitValues();
+                PortableThreadPool threadPoolInstance = ThreadPoolInstance;
 
                 if (workAvg < waitAvg)
                 {
+                    _workWaitAdjustCount++;
+                }
+
+                if (_workWaitAdjustCount >= _workWaitAdjustThreshold)
+                {
+                    _workWaitAdjustCount = 0;
+                    _workWaitAdjustThreshold *= 2;
                     int currMinThreads = ThreadPoolInstance.GetMinThreads();
                     int newMinThreads = Math.Max(1, currMinThreads / 2);
                     ThreadPool.GetMinThreadsNative(out int _, out int ioThreads);
-                    ThreadPoolInstance.SetMinThreads(newMinThreads, ioThreads);
+                    threadPoolInstance.SetMinThreads(newMinThreads, ioThreads);
                     ForceChange(newMinThreads, StateOrTransition.Starvation);
                 }
             }
@@ -490,6 +500,21 @@ namespace System.Threading
             {
                 _threadWorkTimes[_workTimesIndex % _samplesToMeasure] = work;
                 _workTimesIndex++;
+            }
+
+            private (double waitAvg, double workAvg) GetWorkWaitValues()
+            {
+                int waitSum = 0;
+                int workSum = 0;
+                for (int i = 0; i < _samplesToMeasure; i++)
+                {
+                    waitSum += _threadWaitTimes[i];
+                    workSum += _threadWorkTimes[i];
+                }
+
+                return ((double)waitSum / (double)_samplesToMeasure,
+                    (double)workSum / (double)_samplesToMeasure);
+
             }
         }
     }
