@@ -122,6 +122,7 @@ namespace System.Threading
 
             public (int newThreadCount, int newSampleMs) Update(int currentThreadCount, double sampleDurationSeconds, int numCompletions)
             {
+                AdjustForWaiting();
 
                 //
                 // If someone changed the thread count without telling us, update our records accordingly.
@@ -355,10 +356,12 @@ namespace System.Threading
                 if (workAvg >= waitAvg)
                 {
                     newThreadCount = Math.Max(minThreads, newThreadCount);
+                    _workWaitAdjustCount = 0;
                 }
                 else
                 {
                     state = StateOrTransition.Starvation;
+                    newThreadCount = minThreads;
                 }
 
                 //
@@ -491,8 +494,8 @@ namespace System.Threading
                     int currMinThreads = ThreadPoolInstance.GetMinThreads();
                     int newMinThreads = Math.Max(1, currMinThreads / 2);
                     ThreadPool.GetMinThreadsNative(out int _, out int ioThreads);
-                    threadPoolInstance.SetMinThreads(newMinThreads, ioThreads);
-                    ForceChange(newMinThreads, StateOrTransition.Starvation);
+                    threadPoolInstance.OverrideMinThreads(newMinThreads, ioThreads);
+                    // ForceChange(newMinThreads, StateOrTransition.Starvation);
                 }
             }
 

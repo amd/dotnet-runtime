@@ -200,6 +200,47 @@ namespace System.Threading
             }
         }
 
+        private void OverrideMinThreads(int workerThreads, int ioCompletionThreads)
+        {
+            _maxMinThreadLock.Acquire();
+            try
+            {
+                ThreadPool.SetMinIOCompletionThreads(ioCompletionThreads);
+
+                if (s_forcedMinWorkerThreads != 0)
+                {
+                    return;
+                }
+
+                short newMinThreads = (short)Math.Max(1, Math.Min(workerThreads, MaxPossibleThreadCount));
+                _minThreads = newMinThreads;
+
+                ThreadCounts counts = _separated.counts.VolatileRead();
+                while (counts.NumThreadsGoal < newMinThreads)
+                {
+                    ThreadCounts newCounts = counts;
+                    newCounts.NumThreadsGoal = newMinThreads;
+
+                    ThreadCounts oldCounts = _separated.counts.InterlockedCompareExchange(newCounts, counts);
+                    if (oldCounts == counts)
+                    {
+                        if (_separated.numRequestedWorkers > 0)
+                        {
+                            WorkerThread.MaybeAddWorkingWorker(this);
+                        }
+                        break;
+                    }
+
+                    counts = oldCounts;
+                }
+                return;
+            }
+            finally
+            {
+                _maxMinThreadLock.Release();
+            }
+        }
+
         public int GetMaxThreads() => Volatile.Read(ref _maxThreads);
 
         public int GetAvailableThreads()
@@ -280,7 +321,6 @@ namespace System.Threading
 
                     ThreadCounts currentCounts = _separated.counts.VolatileRead();
                     int newMax;
-                    HillClimbing.ThreadPoolHillClimber.AdjustForWaiting();
                     (newMax, _threadAdjustmentIntervalMs) = HillClimbing.ThreadPoolHillClimber.Update(currentCounts.NumThreadsGoal, elapsedSeconds, numCompletions);
 
                     while (newMax != currentCounts.NumThreadsGoal)
