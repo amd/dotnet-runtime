@@ -106,8 +106,6 @@ namespace System.Threading
                         Thread.Sleep(random.Next(1000));
                     }
 
-                    //Thread.Sleep(random.Next(1000));
-
                     threadAdjustmentLock.Acquire();
                     try
                     {
