@@ -51,10 +51,13 @@ namespace System.Threading
                 LowLevelLock threadAdjustmentLock = threadPoolInstance._threadAdjustmentLock;
                 LowLevelLifoSemaphore semaphore = s_semaphore;
 
+                Random random = new();
+
                 while (true)
                 {
                     bool spinWait = true;
-                    while (semaphore.Wait(ThreadPoolThreadTimeoutMs, spinWait))
+                    int waitTime = ThreadPoolThreadTimeoutMs - random.Next(ThreadPoolThreadTimeoutMs);
+                    while (semaphore.Wait(waitTime, spinWait))
                     {
                         bool alreadyRemovedWorkingWorker = false;
                         while (TakeActiveRequest(threadPoolInstance))
@@ -84,7 +87,7 @@ namespace System.Threading
                             Thread.UninterruptibleSleep0();
                             if (!Environment.IsSingleProcessor)
                             {
-                                Thread.SpinWait(1);
+                                Thread.SpinWait(random.Next(1, 10));
                             }
                         }
 
@@ -99,7 +102,11 @@ namespace System.Threading
                             // the number of working workers to reflect that we are done working for now
                             RemoveWorkingWorker(threadPoolInstance);
                         }
+
+                        Thread.Sleep(random.Next(1000));
                     }
+
+                    //Thread.Sleep(random.Next(1000));
 
                     threadAdjustmentLock.Acquire();
                     try
