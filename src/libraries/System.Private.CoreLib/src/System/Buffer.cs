@@ -6,6 +6,7 @@
 #endif
 
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -149,173 +150,33 @@ namespace System
                 goto BuffersOverlap;
             }
 
-            // Use "(IntPtr)(nint)len" to avoid overflow checking on the explicit cast to IntPtr
-
-            ref byte srcEnd = ref Unsafe.Add(ref src, (IntPtr)(nint)len);
-            ref byte destEnd = ref Unsafe.Add(ref dest, (IntPtr)(nint)len);
-
-            if (len <= 16)
-                goto MCPY02;
-            if (len > 64)
-                goto MCPY05;
-
-        MCPY00:
-            // Copy bytes which are multiples of 16 and leave the remainder for MCPY01 to handle.
-            Debug.Assert(len > 16 && len <= 64);
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block16>(ref dest) = Unsafe.As<byte, Block16>(ref src); // [0,16]
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref dest) = Unsafe.As<byte, long>(ref src);
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 8)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 8)); // [0,16]
-#else
-            Unsafe.As<byte, int>(ref dest) = Unsafe.As<byte, int>(ref src);
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 4));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 8)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 8));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 12)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 12)); // [0,16]
-#endif
-            if (len <= 32)
-                goto MCPY01;
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block16>(ref Unsafe.Add(ref dest, 16)) = Unsafe.As<byte, Block16>(ref Unsafe.Add(ref src, 16)); // [0,32]
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 16)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 16));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 24)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 24)); // [0,32]
-#else
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 16)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 16));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 20)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 20));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 24)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 24));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 28)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 28)); // [0,32]
-#endif
-            if (len <= 48)
-                goto MCPY01;
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block16>(ref Unsafe.Add(ref dest, 32)) = Unsafe.As<byte, Block16>(ref Unsafe.Add(ref src, 32)); // [0,48]
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 32)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 32));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 40)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 40)); // [0,48]
-#else
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 32)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 32));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 36)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 36));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 40)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 40));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 44)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 44)); // [0,48]
-#endif
-
-        MCPY01:
-            // Unconditionally copy the last 16 bytes using destEnd and srcEnd and return.
-            Debug.Assert(len > 16 && len <= 64);
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block16>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, Block16>(ref Unsafe.Add(ref srcEnd, -16));
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref srcEnd, -16));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref srcEnd, -8));
-#else
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -16));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -12)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -12));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -8));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -4));
-#endif
-            return;
-
-        MCPY02:
-            // Copy the first 8 bytes and then unconditionally copy the last 8 bytes and return.
-            if ((len & 24) == 0)
-                goto MCPY03;
-            Debug.Assert(len >= 8 && len <= 16);
-#if TARGET_64BIT
-            Unsafe.As<byte, long>(ref dest) = Unsafe.As<byte, long>(ref src);
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref srcEnd, -8));
-#else
-            Unsafe.As<byte, int>(ref dest) = Unsafe.As<byte, int>(ref src);
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 4));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -8));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -4));
-#endif
-            return;
-
-        MCPY03:
-            // Copy the first 4 bytes and then unconditionally copy the last 4 bytes and return.
-            if ((len & 4) == 0)
-                goto MCPY04;
-            Debug.Assert(len >= 4 && len < 8);
-            Unsafe.As<byte, int>(ref dest) = Unsafe.As<byte, int>(ref src);
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -4));
-            return;
-
-        MCPY04:
-            // Copy the first byte. For pending bytes, do an unconditionally copy of the last 2 bytes and return.
-            Debug.Assert(len < 4);
-            if (len == 0)
-                return;
-            dest = src;
-            if ((len & 2) == 0)
-                return;
-            Unsafe.As<byte, short>(ref Unsafe.Add(ref destEnd, -2)) = Unsafe.As<byte, short>(ref Unsafe.Add(ref srcEnd, -2));
-            return;
-
-        MCPY05:
-            // PInvoke to the native version when the copy length exceeds the threshold.
             if (len > MemmoveNativeThreshold)
             {
                 goto PInvoke;
             }
 
-            // Copy 64-bytes at a time until the remainder is less than 64.
-            // If remainder is greater than 16 bytes, then jump to MCPY00. Otherwise, unconditionally copy the last 16 bytes and return.
-            Debug.Assert(len > 64 && len <= MemmoveNativeThreshold);
-            nuint n = len >> 6;
+            nint vectorSize = Vector<byte>.Count;
+            nint iters = len / vectorSize;
+            for (int i = 0; i < iters; i++)
+            {
+                Unsafe.As<byte, Vector<byte>>(ref dest) = Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref src, i * vectorSize));
+            }
 
-        MCPY06:
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block64>(ref dest) = Unsafe.As<byte, Block64>(ref src);
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref dest) = Unsafe.As<byte, long>(ref src);
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 8)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 8));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 16)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 16));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 24)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 24));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 32)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 32));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 40)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 40));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 48)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 48));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref dest, 56)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref src, 56));
-#else
-            Unsafe.As<byte, int>(ref dest) = Unsafe.As<byte, int>(ref src);
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 4));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 8)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 8));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 12)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 12));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 16)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 16));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 20)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 20));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 24)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 24));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 28)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 28));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 32)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 32));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 36)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 36));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 40)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 40));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 44)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 44));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 48)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 48));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 52)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 52));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 56)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 56));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref dest, 60)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref src, 60));
-#endif
-            dest = ref Unsafe.Add(ref dest, 64);
-            src = ref Unsafe.Add(ref src, 64);
-            n--;
-            if (n != 0)
-                goto MCPY06;
+            len -= iters * vectorSize;
 
-            len %= 64;
-            if (len > 16)
-                goto MCPY00;
-#if HAS_CUSTOM_BLOCKS
-            Unsafe.As<byte, Block16>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, Block16>(ref Unsafe.Add(ref srcEnd, -16));
-#elif TARGET_64BIT
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref srcEnd, -16));
-            Unsafe.As<byte, long>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, long>(ref Unsafe.Add(ref srcEnd, -8));
-#else
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -16)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -16));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -12)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -12));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -8)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -8));
-            Unsafe.As<byte, int>(ref Unsafe.Add(ref destEnd, -4)) = Unsafe.As<byte, int>(ref Unsafe.Add(ref srcEnd, -4));
-#endif
+            src = Unsafe.Add(ref src, (IntPtr)(nint)(iters * vectorSize));
+            dest = Unsafe.Add(ref dest, (IntPtr)(nint)(iters * vectorSize));
+            if (len > 0)
+            {
+                for (int i = 0; i < len; i++)
+                {
+                    Unsafe.Add(ref dest, i) = Unsafe.Add(ref src, i);
+                }
+            }
+
             return;
 
+            
         BuffersOverlap:
             // If the buffers overlap perfectly, there's no point to copying the data.
             if (Unsafe.AreSame(ref dest, ref src))
@@ -343,6 +204,9 @@ namespace System
 
         [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct Block64 { }
+
+        [StructLayout(LayoutKind.Sequential, Size = 128)]
+        private struct Block128 { }
 #endif // HAS_CUSTOM_BLOCKS
     }
 }
