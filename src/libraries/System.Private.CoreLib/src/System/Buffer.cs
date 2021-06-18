@@ -150,33 +150,33 @@ namespace System
                 goto BuffersOverlap;
             }
 
+            nint vectorSize = Vector<byte>.Count;
+            nint i = 0;
+
+            if ((nint)len < vectorSize)
+            {
+                goto RemainingBytes;
+            }
+
             if (len > MemmoveNativeThreshold)
             {
                 goto PInvoke;
             }
 
-            nint vectorSize = Vector<byte>.Count;
-            nint iters = len / vectorSize;
-            for (int i = 0; i < iters; i++)
+            nint vectorMoveBound = (nint)len - vectorSize;
+            for (; i < vectorMoveBound; i += vectorSize)
             {
-                Unsafe.As<byte, Vector<byte>>(ref dest) = Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref src, i * vectorSize));
+                Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref dest, i)) = Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref src, i));
             }
 
-            len -= iters * vectorSize;
-
-            src = Unsafe.Add(ref src, (IntPtr)(nint)(iters * vectorSize));
-            dest = Unsafe.Add(ref dest, (IntPtr)(nint)(iters * vectorSize));
-            if (len > 0)
+        RemainingBytes:
+            for (; i < (nint)len; i++)
             {
-                for (int i = 0; i < len; i++)
-                {
-                    Unsafe.Add(ref dest, i) = Unsafe.Add(ref src, i);
-                }
+                Unsafe.Add(ref dest, i) = Unsafe.Add(ref src, i);
             }
 
             return;
 
-            
         BuffersOverlap:
             // If the buffers overlap perfectly, there's no point to copying the data.
             if (Unsafe.AreSame(ref dest, ref src))
