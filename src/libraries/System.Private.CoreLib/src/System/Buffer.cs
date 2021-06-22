@@ -275,10 +275,9 @@ namespace System
                 Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref dest, i * vectorSize)) = Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref src, i * vectorSize));
             }
 
-            len -= (nuint)(iters * vectorSize);
-            dest = ref Unsafe.Add(ref dest, iters * vectorSize);
-            src = ref Unsafe.Add(ref src, iters * vectorSize);
-            goto MCPY08;
+            // Unconditionally copy the last vectorSize bytes to finish copying the buffer
+            Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref destEnd, -vectorSize)) = Unsafe.As<byte, Vector<byte>>(ref Unsafe.Add(ref srcEnd, -vectorSize));
+            return;
 #endif
         MCPY06:
             // Copy 64-bytes at a time until the remainder is less than 64.
@@ -323,7 +322,6 @@ namespace System
 
             len %= 64;
 
-        MCPY08:
             if (len > 16)
                 goto MCPY00;
 #if HAS_CUSTOM_BLOCKS
