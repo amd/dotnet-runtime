@@ -9,8 +9,6 @@ namespace System
         // Determine optimal value for Windows.
         // https://github.com/dotnet/runtime/issues/8896
         private static nuint MemmoveNativeThreshold => nuint.MaxValue;
-#elif TARGET_AMD64
-        private const nuint MemmoveNativeThreshold = 4096;
 #else
         private const nuint MemmoveNativeThreshold = 2048;
 #endif
